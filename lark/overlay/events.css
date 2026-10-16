@@ -1,0 +1,13 @@
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+body { font-family: "Inter", "Noto Sans", "Segoe UI", sans-serif; font-size: 24px; line-height: 1.3; color: #fff; }
+#feed { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ev { align-self: flex-start; max-width: 100%; box-sizing: border-box; padding: 8px 14px; border-radius: 12px;
+  background: rgba(14, 16, 20, 0.62); border-left: 5px solid var(--accent, #7c5cff); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  overflow-wrap: anywhere; animation: in 0.22s ease-out; }
+.kind { font-size: 0.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-right: 8px; color: var(--accent, #7c5cff); }
+.ev[data-type="subscribe"], .ev[data-type="resub"] { --accent: #f472b6; }
+.ev[data-type="gift"] { --accent: #14b8a6; }
+.ev[data-type="cheer"] { --accent: #f59e0b; }
+.ev[data-type="raid"] { --accent: #ef4444; }
+.ev[data-type="stream_online"], .ev[data-type="stream_offline"], .ev[data-type="channel_update"] { --accent: #3b82f6; }
+@keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

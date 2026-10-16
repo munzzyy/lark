@@ -1,0 +1,11 @@
+{
+  "name": "Vertical",
+  "description": "A note for later: a 1080x1920 canvas.",
+  "canvas": [
+    1080,
+    1920
+  ],
+  "scenes": [],
+  "note": "Vertical needs OBS set to a 1080x1920 canvas first (Settings, Video). The wizard does not change the canvas, so this template creates nothing yet.",
+  "id": "vertical"
+}

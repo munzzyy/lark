@@ -1,0 +1,10 @@
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+body { display: flex; align-items: center; justify-content: center; font-family: "Inter", "Noto Sans", "Segoe UI", sans-serif; color: #fff; }
+.card { min-width: 640px; padding: 56px 88px; text-align: center; border-radius: 28px; background: rgba(14, 16, 20, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45); }
+.title { font-size: 64px; font-weight: 800; letter-spacing: -0.01em; }
+.count { margin-top: 12px; font-size: 128px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; }
+.count[hidden] { display: none; }
+.bar { margin: 36px auto 0; width: 220px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.bar span { display: block; width: 40%; height: 100%; border-radius: 3px; background: #7c5cff; animation: slide 1.8s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }

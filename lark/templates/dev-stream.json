@@ -1,0 +1,100 @@
+{
+  "name": "Dev stream",
+  "description": "A window capture with the facecam bottom-left, plus Starting Soon and BRB.",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "scenes": [
+    {
+      "name": "Dev",
+      "items": [
+        {
+          "name": "Window capture",
+          "kind": "pipewire-window-capture-source",
+          "settings": {},
+          "transform": {
+            "positionX": 0,
+            "positionY": 0,
+            "alignment": 5,
+            "boundsType": "OBS_BOUNDS_SCALE_INNER",
+            "boundsAlignment": 0,
+            "boundsWidth": 1920,
+            "boundsHeight": 1080
+          }
+        },
+        {
+          "name": "Camera",
+          "kind": "v4l2_input",
+          "settings": {
+            "device_id": "{camera_device}",
+            "pixelformat": 1196444237,
+            "resolution": 125830200,
+            "framerate": 65596
+          },
+          "transform": {
+            "positionX": 24,
+            "positionY": 786,
+            "alignment": 5,
+            "boundsType": "OBS_BOUNDS_SCALE_INNER",
+            "boundsAlignment": 0,
+            "boundsWidth": 480,
+            "boundsHeight": 270,
+            "cropLeft": 320,
+            "cropRight": 320,
+            "cropTop": 180,
+            "cropBottom": 180
+          }
+        }
+      ]
+    },
+    {
+      "name": "Starting Soon",
+      "items": [
+        {
+          "name": "Lark starting soon",
+          "kind": "browser_source",
+          "settings": {
+            "url": "{overlay_starting}",
+            "width": 1920,
+            "height": 1080,
+            "css": "",
+            "reroute_audio": false
+          },
+          "transform": {
+            "positionX": 0,
+            "positionY": 0,
+            "alignment": 5,
+            "boundsType": "OBS_BOUNDS_SCALE_INNER",
+            "boundsAlignment": 0,
+            "boundsWidth": 1920,
+            "boundsHeight": 1080
+          }
+        }
+      ]
+    },
+    {
+      "name": "BRB",
+      "items": [
+        {
+          "name": "BRB card",
+          "kind": "text_ft2_source",
+          "settings": {
+            "text": "Be right back",
+            "font": {
+              "face": "Sans Serif",
+              "size": 120,
+              "style": "Bold"
+            }
+          },
+          "transform": {
+            "positionX": 960,
+            "positionY": 540,
+            "alignment": 0
+          }
+        }
+      ]
+    }
+  ],
+  "id": "dev-stream"
+}

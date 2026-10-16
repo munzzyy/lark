@@ -1,0 +1,16 @@
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+body { font-family: "Inter", "Noto Sans", "Segoe UI", sans-serif; color: #fff; }
+#stage { position: absolute; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 6%; }
+#alert { box-sizing: border-box; max-width: 90%; min-width: 420px; padding: 22px 34px; border-radius: 18px; text-align: center;
+  background: rgba(14, 16, 20, 0.82); border: 2px solid var(--accent, #7c5cff); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  opacity: 0; transform: translateY(-40px); transition: opacity 0.45s ease, transform 0.45s ease; overflow-wrap: anywhere; }
+#alert.show { opacity: 1; transform: none; }
+#title { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent, #7c5cff); }
+#text { margin-top: 6px; font-size: 40px; font-weight: 700; line-height: 1.2; }
+body.guide #stage { outline: 2px dashed rgba(255, 255, 255, 0.35); outline-offset: -4px; }
+#alert[data-type="follow"] { --accent: #7c5cff; }
+#alert[data-type="subscribe"], #alert[data-type="resub"] { --accent: #f472b6; }
+#alert[data-type="gift"] { --accent: #14b8a6; }
+#alert[data-type="cheer"] { --accent: #f59e0b; }
+#alert[data-type="raid"] { --accent: #ef4444; }
+#alert[data-type="stream_online"], #alert[data-type="stream_offline"], #alert[data-type="channel_update"] { --accent: #3b82f6; }
