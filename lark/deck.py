@@ -181,7 +181,7 @@ class DeckActions:
             return live, "on air" if live else ""
         if key.startswith("frame:"):
             lit = self.ctx.eptz.deck_lit(key)
-            return lit, ("on" if key == "frame:quality" else "framed") if lit else ""
+            return lit, ("on" if key in ("frame:quality", "frame:auto") else "framed") if lit else ""
         if key == "mic":
             muted = s.inputs.get(cfg.get("mic_input"), {}).get("muted", False)
             return muted, "muted" if muted else ""

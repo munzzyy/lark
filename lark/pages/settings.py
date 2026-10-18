@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QComboBox, QGridLayout, QHBoxLayout, QLineEdit, Q
 from ..shortcuts import SHORTCUTS
 from ..widgets import Page, card, divider, label
 from .alert_settings import alert_settings_card
-from .framing import camera_in_obs_card
+from .framing import autoframe_card, camera_in_obs_card
 
 ACCENTS = ["#7c5cff", "#3b82f6", "#14b8a6", "#f472b6", "#f59e0b", "#ef4444"]
 
@@ -168,6 +168,7 @@ class SettingsPage(Page):
         sl.addWidget(label("They do nothing while you are typing in a text field.", "small"), len(SHORTCUTS) + 1, 0, 1, 2)
         self.body.addWidget(sc)
         self.body.addWidget(camera_in_obs_card(ctx))
+        self.body.addWidget(autoframe_card(ctx))
         self.body.addWidget(alert_settings_card(ctx))
         self.body.addStretch(1)
 

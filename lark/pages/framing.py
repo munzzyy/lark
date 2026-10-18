@@ -1,8 +1,8 @@
 """Framing in OBS: the drag pad, sliders and presets, and the camera mode card. Logic lives in lark/eptz.py."""
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import (QHBoxLayout, QLineEdit, QMenu, QPushButton, QSlider, QSpinBox,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QHBoxLayout, QLineEdit, QMenu, QPushButton, QSlider,
+                               QSpinBox, QVBoxLayout, QWidget)
 
 from ..eptz import MODE_DETAIL, MODE_QUALITY, QUALITY_NOTE, ZOOM_MAX, ZOOM_MIN
 from ..widgets import card, label
@@ -16,9 +16,10 @@ class FramePad(QWidget):
     zoomed = Signal(float)
     reset = Signal()
 
-    def __init__(self, eptz, accent="#7c5cff"):
+    def __init__(self, eptz, accent="#7c5cff", autoframe=None):
         super().__init__()
         self.eptz = eptz
+        self.autoframe = autoframe
         self.accent = QColor(accent)
         self.setFixedSize(PAD_W, PAD_H)
         self.setCursor(Qt.OpenHandCursor)
@@ -80,6 +81,11 @@ class FramePad(QWidget):
         p.setPen(QPen(self.accent if self.eptz.ready else QColor("#3a4152"), 2))
         p.setBrush(fill)
         p.drawRoundedRect(r.adjusted(1, 1, -1, -1), 5, 5)
+        if self.autoframe is not None and self.autoframe.on:
+            p.setBrush(Qt.NoBrush)
+            p.setPen(QPen(self.accent, 1))
+            for fx, fy, fw, fh in self.autoframe.faces:
+                p.drawRect(QRectF(fx * PAD_W, fy * PAD_H, fw * PAD_W, fh * PAD_H))
 
 
 class CameraModeCard(QWidget):
@@ -168,6 +174,12 @@ class FramingCard(QWidget):
         self.status = label("", "small")
         head.addWidget(self.status)
         head.addStretch(1)
+        self.auto_status = label("", "small")
+        head.addWidget(self.auto_status)
+        self.auto = QPushButton("Auto-frame")
+        self.auto.setCheckable(True)
+        self.auto.clicked.connect(self._auto_clicked)
+        head.addWidget(self.auto)
         self.mode = label("", "muted")
         head.addWidget(self.mode)
         self.total = label("", "muted")
@@ -178,7 +190,8 @@ class FramingCard(QWidget):
 
         body = QHBoxLayout()
         body.setSpacing(24)
-        self.pad = FramePad(self.eptz, accent)
+        self.autoframe = getattr(ctx, "autoframe", None)
+        self.pad = FramePad(self.eptz, accent, self.autoframe)
         self.pad.moved.connect(lambda x, y: self.eptz.set_framing(pan=x, tilt=y, animate=False))
         self.pad.zoomed.connect(lambda z: self.eptz.set_framing(zoom=z, animate=False))
         self.pad.reset.connect(self.eptz.reset)
@@ -227,6 +240,8 @@ class FramingCard(QWidget):
 
         self.eptz.changed.connect(self.sync)
         self.eptz.mode_changed.connect(self.sync)
+        if self.autoframe is not None:
+            self.autoframe.changed.connect(self.sync)
         self._preset_names = None
         self.sync()
 
@@ -235,6 +250,10 @@ class FramingCard(QWidget):
             self.eptz.set_framing(zoom=v / 100, animate=False)
         else:
             self.eptz.set_framing(**{key: v / 100}, animate=False)
+
+    def _auto_clicked(self, checked):
+        self.autoframe.set_on(checked)
+        self.sync()
 
     def _save(self):
         if self.eptz.save_preset(self.name.text()):
@@ -255,11 +274,23 @@ class FramingCard(QWidget):
         self.status.setText("" if e.status == "Ready" else e.status)
         self.mode.setText(f"Camera mode: {e.mode_text()}" if e.mode else "")
         self.update_total()
+        self.sync_auto()
         names = list(e.presets())
         if names != self._preset_names:
             self._preset_names = names
             self._fill_presets(names)
         self.pad.update()
+
+    def sync_auto(self):
+        a = self.autoframe
+        self.auto.setVisible(a is not None)
+        self.auto_status.setVisible(a is not None)
+        if a is None:
+            return
+        self.auto.setEnabled(a.available)
+        self.auto.setToolTip("Keeps the face in frame by moving the crop in OBS" if a.available else a.reason)
+        self.auto.setChecked(a.on)
+        self.auto_status.setText(a.status)
 
     def update_total(self):
         cam = self.camera_zoom()
@@ -314,4 +345,69 @@ def camera_in_obs_card(ctx):
     row.addWidget(spin)
     row.addStretch(1)
     lay.addLayout(row)
+    return frame
+
+
+def autoframe_card(ctx):
+    """Settings page card: how auto-framing follows the face."""
+    cfg = ctx.config
+    frame, lay = card(spacing=12)
+    lay.addWidget(label("Auto-frame", "h2"))
+    lay.addWidget(label("Auto-frame looks at the frames OBS already has and moves the crop to keep your face in "
+                        "view. Turn it on from the Camera page or the Deck.", "small", wrap=True))
+
+    def save(key, value):
+        cfg.set(key, value)
+        try:
+            cfg.save()
+        except OSError as e:
+            ctx.store.toast.emit(f"Could not write the config: {e.strerror}", True)
+
+    def row(text, widget):
+        r = QHBoxLayout()
+        r.addWidget(label(text, "muted"))
+        r.addWidget(widget)
+        r.addStretch(1)
+        lay.addLayout(r)
+
+    zoom = QDoubleSpinBox()
+    zoom.setRange(1.0, 4.0)
+    zoom.setSingleStep(0.1)
+    zoom.setDecimals(1)
+    zoom.setSuffix("x")
+    zoom.setValue(cfg.get("autoframe_zoom_max"))
+    zoom.valueChanged.connect(lambda v: save("autoframe_zoom_max", round(v, 1)))
+    row("Zoom in no further than", zoom)
+
+    share = QSpinBox()
+    share.setRange(15, 60)
+    share.setSuffix(" %")
+    share.setValue(round(cfg.get("autoframe_face_share") * 100))
+    share.valueChanged.connect(lambda v: save("autoframe_face_share", v / 100))
+    row("Face height, as a share of the picture", share)
+
+    hold = QSpinBox()
+    hold.setRange(1, 60)
+    hold.setSuffix(" s")
+    hold.setValue(round(cfg.get("autoframe_lost_s")))
+    hold.valueChanged.connect(lambda v: save("autoframe_lost_s", v))
+    row("Hold this long before going back", hold)
+
+    home = QComboBox()
+    names = list(ctx.eptz.presets())
+    current = cfg.get("autoframe_home")
+    if current not in names:
+        names.append(current)
+    home.addItems(names)
+    home.setCurrentText(current)
+    home.currentTextChanged.connect(lambda v: save("autoframe_home", v))
+    row("Go back to", home)
+
+    interval = QSpinBox()
+    interval.setRange(200, 2000)
+    interval.setSingleStep(50)
+    interval.setSuffix(" ms")
+    interval.setValue(cfg.get("autoframe_interval_ms"))
+    interval.valueChanged.connect(lambda v: save("autoframe_interval_ms", v))
+    row("Look for a face every", interval)
     return frame

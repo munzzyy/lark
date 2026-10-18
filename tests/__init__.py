@@ -4,6 +4,7 @@ import atexit
 import os
 import pwd
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -49,3 +50,32 @@ def _cleanup():
 
 
 atexit.register(_cleanup)
+
+
+# PySide6 6.12 segfaults in its own exit hook while it frees widgets the tests left behind, after
+# every test has already passed. Leave through os._exit with the real result instead of letting that run.
+import unittest  # noqa: E402
+
+import PySide6.QtCore  # noqa: E402,F401
+
+_outcome = {"ok": None}
+_real_run = unittest.TextTestRunner.run
+
+
+def _recording_run(self, test):
+    result = _real_run(self, test)
+    _outcome["ok"] = result.wasSuccessful()
+    return result
+
+
+def _leave_cleanly():
+    if _outcome["ok"] is None:
+        return
+    _cleanup()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0 if _outcome["ok"] else 1)
+
+
+unittest.TextTestRunner.run = _recording_run
+atexit.register(_leave_cleanly)

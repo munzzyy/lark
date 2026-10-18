@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QHBoxLayout, QMainWin
                                QVBoxLayout, QWidget)
 
 from . import __version__
+from .autoframe import AutoFrame
 from .camera_backend import CameraWorker
 from .config import Config
 from .eptz import Eptz
@@ -158,6 +159,7 @@ def build_context(config=None, services_kw=None):
     ctx = SimpleNamespace(config=config, bridge=bridge, store=store, camera=camera, services=Services(config, **(services_kw or {})))
     ctx.apply_settings = lambda old=None: None
     ctx.eptz = Eptz(ctx)
+    ctx.autoframe = AutoFrame(ctx)
     return ctx
 
 

@@ -10,6 +10,8 @@ import time
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from .autoframe import AUTO_KEY
+
 log = logging.getLogger("lark.eptz")
 
 ZOOM_MIN, ZOOM_MAX = 1.0, 4.0
@@ -107,6 +109,7 @@ class Eptz(QObject):
     changed = Signal()
     mode_changed = Signal()
     confirm_needed = Signal(bool)
+    manual_framing = Signal()
 
     def __init__(self, ctx, clock=time.monotonic):
         super().__init__()
@@ -271,13 +274,15 @@ class Eptz(QObject):
     def duration_s(self):
         return self.cfg.get("eptz_duration_ms") / 1000.0
 
-    def set_framing(self, zoom=None, pan=None, tilt=None, animate=True):
+    def set_framing(self, zoom=None, pan=None, tilt=None, animate=True, auto=False):
         if not self.ready:
             self._toast(self.status if self.status != "Ready" else "The camera is not ready yet", True)
             return False
         end = (clamp(self.zoom if zoom is None else zoom, ZOOM_MIN, ZOOM_MAX, self.zoom),
                clamp(self.pan if pan is None else pan, -1, 1, self.pan),
                clamp(self.tilt if tilt is None else tilt, -1, 1, self.tilt))
+        if not auto:
+            self.manual_framing.emit()
         dur = self.duration_s()
         if not animate or dur <= 0:
             self._stop_tween()
@@ -438,12 +443,14 @@ class Eptz(QObject):
 
     def deck_keys(self):
         return ([f"frame:preset:{n}" for n in self.presets()] + ["frame:reset"]
-                + [f"frame:{k}" for k in self.DECK_NUDGES] + [self.QUALITY_KEY])
+                + [f"frame:{k}" for k in self.DECK_NUDGES] + [self.QUALITY_KEY, AUTO_KEY])
 
     def deck_label(self, key):
         k = key[6:]
         if key == self.QUALITY_KEY:
             return "Quality mode"
+        if key == AUTO_KEY:
+            return "Auto-frame"
         if k.startswith("preset:"):
             return k[7:]
         return "Reset framing" if k == "reset" else self.DECK_NUDGES[k][0]
@@ -451,12 +458,20 @@ class Eptz(QObject):
     def deck_lit(self, key):
         if key == self.QUALITY_KEY:
             return self.fourk is True
+        if key == AUTO_KEY:
+            auto = getattr(self.ctx, "autoframe", None)
+            return bool(auto and auto.on)
         k = key[6:]
         p = self.presets().get(k[7:]) if k.startswith("preset:") else None
         return bool(p) and self.ready and all(abs(a - b) < 0.02 for a, b in zip(p, (self.zoom, self.pan, self.tilt)))
 
     def deck_run(self, key):
         k = key[6:]
+        if key == AUTO_KEY:
+            auto = getattr(self.ctx, "autoframe", None)
+            if auto is None:
+                return False
+            return auto.toggle()
         if key == self.QUALITY_KEY:
             if self.fourk is None:
                 self._toast(self.status if self.status != "Ready" else "The camera mode is not known yet", True)
